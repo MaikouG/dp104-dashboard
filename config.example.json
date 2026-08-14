@@ -1,0 +1,6 @@
+{
+  "location_label": "MYCITY",
+  "weather_latitude": "YOUR_LATITUDE",
+  "weather_longitude": "YOUR_LONGITUDE",
+  "weather_timezone": "Etc/UTC"
+}
