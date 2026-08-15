@@ -5,8 +5,8 @@ from PyInstaller.utils.hooks import collect_submodules
 hiddenimports = collect_submodules("pynput") + collect_submodules("pystray")
 
 a = Analysis(
-    ["src/dp104_dashboard.py"],
-    pathex=["."],
+    ["src/dp104_dashboard_v23.py"],
+    pathex=[".", "src"],
     binaries=[],
     datas=[],
     hiddenimports=hiddenimports,

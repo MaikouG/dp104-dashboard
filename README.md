@@ -6,45 +6,62 @@
 
 An unofficial Windows tray controller for the **TickType DP104** 24×8 RGB matrix. The project focuses on readability, unobtrusive background operation, and conservative Raw HID access.
 
----
-
 ## 中文
 
-### 功能
+### v2.3 新增：应用级自动休眠
+
+托盘新增 **自动休眠**：
+
+- 关闭
+- 5 分钟
+- 15 分钟
+- 30 分钟
+- 1 小时
+- 3 小时
+- 6 小时
+- 立即休眠（关闭所有 LED）
+- 立即唤醒 LED
+
+自动休眠不依赖键盘固件自己的空闲计时器，因为天气、时间、Codex WK 等后台 HID 更新可能会重置固件空闲时间。
+
+v2.3 只把**真实键盘按键**视为用户活动：
+
+1. 超过设定时间没有按键；
+2. 程序发送已实机验证的全局 LED OFF 指令；
+3. 休眠期间暂停天气、时间、WK、滚动文本和页面切换等 DP104 HID 写入；
+4. LED OFF 之后发生的新按键才允许唤醒；
+5. 唤醒后恢复之前选择的显示模式。
+
+为避免休眠瞬间出现 `OFF -> ON`，v2.3 增加了按键事件序号和休眠转换保护，休眠前的残留 hook 事件不能触发唤醒。
+
+### 主要功能
 
 - 系统托盘运行，无控制台窗口。
-- 托盘内直接切换显示模式：
-  - 自动：敲击键盘时切到 DP104 自带的实时输入页；停止敲击约 5 秒后恢复滚动。
-  - 固定滚动信息。
+- 托盘内直接切换：
+  - 自动：敲键实时输入 / 空闲滚动。
+  - 固定滚动。
   - 固定实时输入。
   - 固定天气。
   - 固定时钟。
   - 固定 Codex 周额度。
   - 天气 / 时钟 / WK 轮播。
   - 暂停更新。
-- 托盘内直接开启/关闭 Windows 登录自启。
-- 单实例保护，避免多个进程同时向 DP104 Raw HID 写数据。
-- 支持打包为无控制台的单文件 Windows EXE。
-- 天气位置**不写死在源码中**。
-- Codex 配额读取使用本机已有的 Codex Desktop 登录状态；项目不会把访问令牌写入仓库或设置文件。
+- 托盘内开启/关闭 Windows 登录自启。
+- 单实例保护，降低多个进程同时写 DP104 Raw HID 的风险。
+- 支持打包为单文件 Windows EXE。
+- 天气位置不写死在公开源码中。
 
-### 隐私设计
+### 隐私
 
-此仓库不包含维护者或使用者的地理位置、经纬度、Codex token、ChatGPT account ID、Windows 用户名或本地绝对路径。
+此仓库不包含维护者/使用者的真实地理位置、经纬度、Codex token、ChatGPT account ID、Windows 用户名或用户机器绝对路径。
 
-天气配置属于本地私有配置。请复制：
-
-```text
-config.example.json
-```
-
-并将实际值保存到：
+天气配置保存在本机：
 
 ```text
 %APPDATA%\DP104Dashboard\config.json
 ```
 
-示例结构：
+参考 `config.example.json`：
 
 ```json
 {
@@ -55,9 +72,7 @@ config.example.json
 }
 ```
 
-`config.json` 已被 `.gitignore` 排除，不应提交到 Git。
-
-也可以使用环境变量：
+也可以使用：
 
 ```text
 DP104_LOCATION_LABEL
@@ -68,176 +83,190 @@ DP104_TYPING_IDLE
 DP104_PAGE_SECONDS
 ```
 
-### 安装与运行
+### 源码运行
 
-源码运行需要 Python 3.12+：
+Python 3.12+：
 
 ```bash
 pip install -r requirements.txt
-python src/dp104_dashboard.py --tray
+python src/dp104_dashboard_v23.py --tray
 ```
 
-Windows 用户如果想要普通 EXE，直接双击：
+`src/dp104_dashboard_v23.py` 是 v2.3 的托盘/休眠扩展，会复用隐私安全的 `src/dp104_dashboard.py` 基础实现。
+
+### 构建 EXE
+
+Windows 下双击：
 
 ```text
 build\00_BUILD_EXE.cmd
 ```
 
-生成文件：
+生成：
 
 ```text
 dist\DP104Dashboard.exe
 ```
 
-双击 EXE 后程序进入系统托盘。右键托盘图标即可选择模式、开关开机自启、刷新或退出。
+### 已验证的 DP104 指令
 
-### DP104 页面
-
-本项目当前使用的页面编号来自实际抓包验证：
+页面：
 
 - `1`：Real-time Typing / 实时输入
 - `2`：Custom Pixel / 自定义像素
 - `6`：Scrolling Message / 滚动文本
 
-Raw HID 目标为 DP104 的 `VID 0xE560 / PID 0xE104`，像素与控制通信使用 MI_01 / interface 1。
+全局 LED 供电：
 
-### 安全说明
+```text
+OFF: 07 11 01 00 ...
+ON : 07 11 01 01 ...
+随后: 09 11 00 ...
+```
 
-DP104 固件对并发 HID 写入比较敏感。项目因此使用共享锁和单实例机制，避免自身多个线程/进程同时写入设备。
+官网固件休眠设置抓包：
 
-建议使用本程序时关闭官方 TickType 配置器，不要同时运行其他 DP104 Raw HID 控制程序。
+```text
+5 分钟  -> 07 11 02 01 ...
+15 分钟 -> 07 11 02 02 ...
+30 分钟 -> 07 11 02 03 ...
+1 小时  -> code 04
+3 小时  -> code 05
+6 小时  -> code 06
+```
 
-原生滚动速度的控制命令目前尚未验证，因此项目不会猜测并发送未知速度指令。
+v2.3 的自动休眠使用应用自己的空闲计时 + 全局 LED OFF/ON，而不是依赖上述固件空闲计时。
 
-### Codex 配额
+### 安全
 
-Codex 配额功能读取本机 Codex Desktop 已有登录状态，并请求当前配额数据。它不会把 token、JWT、account ID 或原始授权文件写入项目目录。
+DP104 固件对并发 HID 写入比较敏感。使用本程序时建议关闭官方 TickType 配置器，并避免同时运行其他 DP104 Raw HID 控制程序。
 
-该配额接口属于当前实现观察到的行为，并不是承诺稳定的公开 OpenAI API，未来可能变化。
-
-### 致谢
-
-DP104 Raw HID 协议研究参考了社区项目：
-
-- Mikaneroni/MMSWaM
-- change-42-yhmm/quota-float（Codex Desktop 配额读取实现思路）
-
-本项目是非官方社区工具，与 TickType 或 OpenAI 无隶属或背书关系。
+如果键盘整体无响应，请停止程序、重新插拔 USB 一次，不要连续重复发送控制命令。
 
 ---
 
 ## English
 
+### v2.3: application-controlled auto sleep
+
+The tray now includes an **Auto Sleep** submenu with:
+
+- Off
+- 5 minutes
+- 15 minutes
+- 30 minutes
+- 1 hour
+- 3 hours
+- 6 hours
+- Sleep now (global LED off)
+- Wake LEDs now
+
+The dashboard does not rely on the keyboard firmware's own inactivity timer because periodic weather, clock, quota, scrolling-text, or other HID updates can reset that timer.
+
+v2.3 treats **physical keyboard keypresses only** as user activity:
+
+1. no keypress occurs for the configured interval;
+2. the app sends the verified global LED OFF command;
+3. while asleep, dashboard display/HID updates are blocked;
+4. only a new keypress that occurs after LED OFF can wake the device;
+5. the previously selected display mode is restored after wake.
+
+A key-event sequence guard prevents stale/pre-sleep hook events from producing an immediate `OFF -> ON` race.
+
 ### Features
 
-- Runs as a Windows system-tray application with no console window.
-- Switch display modes directly from the tray:
-  - Hybrid: switch to the DP104 firmware's real-time typing page on keypress, then return to scrolling after about 5 seconds of inactivity.
-  - Fixed scrolling information.
+- Windows system-tray application with no console window.
+- Tray-selectable display modes:
+  - Hybrid typing / idle scrolling.
+  - Fixed scrolling.
   - Fixed real-time typing.
   - Fixed weather.
   - Fixed clock.
   - Fixed Codex weekly quota.
   - Weather / clock / weekly-quota rotation.
-  - Pause updates.
-- Enable or disable Windows sign-in auto-start from the tray menu.
-- Single-instance protection to reduce the risk of concurrent Raw HID writes.
-- Can be packaged as a single-file, windowless Windows EXE.
-- No personal weather location is embedded in source code.
-- Codex quota support uses the existing local Codex Desktop session and does not persist access tokens in the repository or application settings.
+  - Pause.
+- Windows sign-in auto-start toggle in the tray.
+- Single-instance protection.
+- Single-file Windows EXE build support.
+- No personal weather location embedded in public source.
 
 ### Privacy
 
-This repository intentionally contains no maintainer/user coordinates, precise location, Codex token, ChatGPT account ID, Windows username, or machine-specific absolute path.
+The public repository intentionally contains no real user coordinates, precise location, Codex token, ChatGPT account ID, Windows username, or user-specific absolute path.
 
-Weather configuration is local/private. Copy:
-
-```text
-config.example.json
-```
-
-and save your real values to:
+Private weather settings belong in:
 
 ```text
 %APPDATA%\DP104Dashboard\config.json
 ```
 
-Example:
+See `config.example.json`.
 
-```json
-{
-  "location_label": "MYCITY",
-  "weather_latitude": "YOUR_LATITUDE",
-  "weather_longitude": "YOUR_LONGITUDE",
-  "weather_timezone": "Etc/UTC"
-}
-```
+### Run from source
 
-`config.json` is ignored by Git and should never be committed.
-
-Environment-variable configuration is also supported:
-
-```text
-DP104_LOCATION_LABEL
-DP104_LAT
-DP104_LON
-DP104_TZ
-DP104_TYPING_IDLE
-DP104_PAGE_SECONDS
-```
-
-### Install and run
-
-Python 3.12+ is recommended:
+Python 3.12+:
 
 ```bash
 pip install -r requirements.txt
-python src/dp104_dashboard.py --tray
+python src/dp104_dashboard_v23.py --tray
 ```
 
-For a normal Windows executable, double-click:
+`src/dp104_dashboard_v23.py` extends the privacy-safe base implementation in `src/dp104_dashboard.py`.
+
+### Build EXE
+
+On Windows, double-click:
 
 ```text
 build\00_BUILD_EXE.cmd
 ```
 
-The output is:
+Output:
 
 ```text
 dist\DP104Dashboard.exe
 ```
 
-Double-click the EXE to start the tray application. Right-click the tray icon to choose a display mode, toggle auto-start, refresh, or exit.
+### Verified DP104 commands
 
-### DP104 pages
-
-The currently used page IDs were verified from actual HID captures:
+Display pages:
 
 - `1`: Real-time Typing
 - `2`: Custom Pixel
 - `6`: Scrolling Message
 
-The target device is `VID 0xE560 / PID 0xE104`; pixel/control traffic uses MI_01 / interface 1.
+Global LED power:
+
+```text
+OFF: 07 11 01 00 ...
+ON : 07 11 01 01 ...
+then: 09 11 00 ...
+```
+
+Captured firmware sleep settings:
+
+```text
+5 min  -> 07 11 02 01 ...
+15 min -> 07 11 02 02 ...
+30 min -> 07 11 02 03 ...
+1 h    -> code 04
+3 h    -> code 05
+6 h    -> code 06
+```
+
+v2.3 intentionally uses its own inactivity timer plus global LED OFF/ON instead of relying on the firmware inactivity timer.
 
 ### Safety
 
-The DP104 firmware appears sensitive to concurrent HID writers. This project therefore uses a shared HID lock and single-instance protection.
+The DP104 firmware appears sensitive to concurrent HID writers. Close the official TickType configurator while this application controls the keyboard and avoid running multiple DP104 Raw HID controllers at the same time.
 
-Close the official TickType configurator while this application is controlling the keyboard, and avoid running multiple DP104 Raw HID controllers simultaneously.
-
-The native scrolling-speed command has not been verified, so the project deliberately does not send guessed speed-control packets.
-
-### Codex quota
-
-The Codex quota feature reads the existing local Codex Desktop login state and queries current quota information. It does not write access tokens, JWTs, account IDs, or raw auth files into the project directory.
-
-The quota endpoint is an observed implementation detail, not a guaranteed stable public OpenAI API, and may change.
+If the whole keyboard becomes unresponsive, stop the application, reconnect USB once, and do not repeatedly retry control commands.
 
 ### Credits
 
-DP104 Raw HID protocol research was informed by community projects including:
+Protocol research was informed by community projects including:
 
 - Mikaneroni/MMSWaM
-- change-42-yhmm/quota-float (Codex Desktop quota approach)
+- change-42-yhmm/quota-float
 
-This is an unofficial community project and is not affiliated with or endorsed by TickType or OpenAI.
+This project is unofficial and is not affiliated with or endorsed by TickType or OpenAI.

@@ -1,0 +1,24 @@
+GitHub update fallback
+
+The ChatGPT GitHub connector can currently READ MaikouG/dp104-dashboard,
+but GitHub still returns HTTP 403 "Resource not accessible by integration"
+for write operations.
+
+To update manually:
+1. Extract this ZIP.
+2. Open MaikouG/dp104-dashboard on GitHub.
+3. Use Add file -> Upload files.
+4. Drag these files/folders into the repository root and allow same-path files
+   to replace the existing README/build files.
+5. Commit to main with:
+   Add v2.3 guarded auto-sleep support
+
+Files:
+- src/dp104_dashboard_v23.py         NEW
+- build/DP104Dashboard.spec          REPLACE
+- build/00_BUILD_EXE.cmd             REPLACE
+- README.md                          REPLACE
+- CHANGELOG.md                       REPLACE
+- DP104_POWER_SLEEP_PROTOCOL.md      NEW
+
+No personal location or credentials are present in this update package.
