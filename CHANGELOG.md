@@ -1,15 +1,16 @@
 # Changelog
 
-## 2.3.0
+## 2.4.0
 
-- Added tray-configurable application-controlled auto sleep.
-- Added 5 / 15 / 30 minute and 1 / 3 / 6 hour idle options.
-- Added manual global LED sleep/wake tray actions.
-- Uses verified global LED OFF/ON Raw HID packets.
-- Only physical keypresses reset the application idle timer.
-- Blocks dashboard HID/display refreshes while asleep.
-- Added post-sleep key sequence guard to prevent stale events from causing immediate wake.
-- Preserved privacy-safe weather configuration; no personal location is embedded.
+- Added tray-based weather-location configuration.
+- Added Open-Meteo place-name search with selectable results.
+- Added manual latitude/longitude input and editable display label.
+- Search results can auto-fill the location timezone.
+- Weather configuration applies without restarting the tray app.
+- Added a clear-location action.
+- Universal Release EXE no longer requires build-time location data.
+- Location remains local-only under `%APPDATA%\DP104Dashboard\config.json`.
+- Preserved guarded application-controlled auto sleep from v2.3.
 
 ## 2.2.0
 

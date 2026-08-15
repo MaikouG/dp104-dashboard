@@ -1,10 +1,10 @@
 @echo off
 setlocal
-title DP104 Dashboard v2.3 EXE Builder
+title DP104 Dashboard v2.4 EXE Builder
 cd /d "%~dp0\.."
 
 echo ========================================
-echo DP104 Dashboard v2.3 - Build Windows EXE
+echo DP104 Dashboard v2.4 - Build Windows EXE
 echo ========================================
 echo.
 
