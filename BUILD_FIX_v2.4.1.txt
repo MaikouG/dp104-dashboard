@@ -1,0 +1,13 @@
+DP104 Dashboard v2.4.1 build-path fix
+
+Cause:
+The PyInstaller spec file is inside build/, and PyInstaller resolves the script,
+pathex and icon paths relative to that spec directory.
+
+Fixed paths:
+- script: ../src/dp104_dashboard_v24.py
+- pathex: ../src
+- icon: ../assets/dp104.ico
+
+Build output:
+  dist\DP104Dashboard.exe

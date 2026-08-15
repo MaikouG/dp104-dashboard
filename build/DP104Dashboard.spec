@@ -5,8 +5,8 @@ from PyInstaller.utils.hooks import collect_submodules
 hiddenimports = collect_submodules("pynput") + collect_submodules("pystray")
 
 a = Analysis(
-    ["src/dp104_dashboard_v24.py"],
-    pathex=["."],
+    ["../src/dp104_dashboard_v24.py"],
+    pathex=["../src"],
     binaries=[],
     datas=[],
     hiddenimports=hiddenimports,
@@ -32,5 +32,5 @@ exe = EXE(
     strip=False,
     upx=True,
     console=False,
-    icon=["assets/dp104.ico"],
+    icon=["../assets/dp104.ico"],
 )

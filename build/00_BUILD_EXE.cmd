@@ -42,7 +42,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/4] Building DP104Dashboard.exe...
-python.exe -m PyInstaller --noconfirm --clean build\DP104Dashboard.spec
+python.exe -m PyInstaller --noconfirm --clean --distpath dist --workpath build\pyinstaller-work build\DP104Dashboard.spec
 if errorlevel 1 (
     echo ERROR: EXE build failed.
     pause
